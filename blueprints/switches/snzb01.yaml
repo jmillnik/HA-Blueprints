@@ -1,0 +1,81 @@
+blueprint:
+  name: Deconz - Sonoff Button
+  description: Automate your Sonoff SNZB-01P button using deconz events.
+  domain: automation
+  input:
+    sonoff_buttons:
+      name: Sonoff Button
+      description: The Sonoff UUID
+      default: ""
+      selector:
+        text:
+          multiple: true
+    remote_button_short_press:
+      name: Single Press
+      description: Action to run on single press
+      default: []
+      selector:
+        action: {}
+    remote_button_double_press:
+      name: Double Press
+      description: Action to run on double press
+      default: []
+      selector:
+        action: {}
+    remote_button_hold_press:
+      name: Hold Press
+      description: Action to run on hold
+      default: []
+      selector:
+        action: {}
+mode: restart
+max_exceeded: silent
+trigger:
+  - platform: event
+    event_type: deconz_event
+  - platform: event
+    event_type: zha_event
+
+variables:
+  sonoff_buttons: !input sonoff_buttons
+  actions:
+    zha_event:
+      single: "toggle"
+      double: "on"
+      long: "off"
+    deconz_event:
+      single: "1002"
+      double: "1004"
+      long: "1003"
+  event_type: "{{ trigger.event.event_type }}"
+  device_identifier: >-
+    {%- if event_type == 'zha_event' -%}
+      {{ trigger.event.data['device_ieee'] }}
+    {%- elif event_type == 'deconz_event' -%}
+      {{ trigger.event.data['unique_id'] }}
+    {%- endif -%}
+  event: >-
+    {%- if event_type == 'zha_event' -%}
+      {{ trigger.event.data.command }}
+    {%- elif event_type == 'deconz_event' -%}
+      {{ trigger.event.data.event }}
+    {%- endif -%}
+  single: "{{ actions[event_type]['single'] }}"
+  double: "{{ actions[event_type]['double'] }}"
+  long: "{{ actions[event_type]['long'] }}"
+
+condition:
+  - condition: template
+    value_template: "{{ device_identifier in sonoff_buttons }}"
+
+action:
+  - choose:
+      - conditions:
+          - "{{ single == event }}"
+        sequence: !input "remote_button_short_press"
+      - conditions:
+          - "{{ double == event }}"
+        sequence: !input "remote_button_double_press"
+      - conditions:
+          - "{{ long == event }}"
+        sequence: !input "remote_button_hold_press"
