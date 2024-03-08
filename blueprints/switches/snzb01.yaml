@@ -1,6 +1,6 @@
 blueprint:
-  name: Deconz - Sonoff Button
-  description: Automate your Sonoff SNZB-01P button using deconz events.
+  name: SNZB01 - Sonoff Button
+  description: Automate your Sonoff SNZB-01P button for zha and deconz events.
   domain: automation
   input:
     sonoff_buttons:
